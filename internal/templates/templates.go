@@ -140,3 +140,53 @@ tasks:
           FS_TYPE: ext4
 `
 )
+
+// HardwareProvisionJobTemplate is a helper struct for rendering CAPT Template data.
+type HardwareProvisionJobTemplate struct {
+	Name      string
+	Namespace string
+	EFIBoot   bool
+	BootsIP   string
+}
+
+// Render renders workflow template for a given machine including user-data.
+func (wt *HardwareProvisionJobTemplate) Render() (string, error) {
+	if wt.Name == "" {
+		return "", ErrMissingName
+	}
+
+	if wt.BootsIP == "" {
+		return "", ErrMissingImageURL // TODO correct error
+	}
+
+	// TODO error for namespace
+
+	tpl, err := template.New("template").Parse(hardwareProvisionJobTemplate)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to parse template")
+	}
+
+	buf := &bytes.Buffer{}
+
+	err = tpl.Execute(buf, wt)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to execute template")
+	}
+
+	return buf.String(), nil
+}
+
+const (
+	hardwareProvisionJobTemplate = `
+machineRef:
+  name: {{.Name}}
+  namespace: {{.Namespace}}
+tasks:
+- powerAction: "off"
+- oneTimeBootDeviceAction:
+    device:
+    - pxe
+    efiBoot: true
+- powerAction: "on"
+`
+)

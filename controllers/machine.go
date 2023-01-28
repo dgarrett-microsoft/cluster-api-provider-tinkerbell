@@ -586,7 +586,29 @@ func (mrc *machineReconcileContext) getBMCJob(jName string, bmj *rufiov1.Job) er
 
 // createHardwareProvisionJob creates a BMCJob object with the required tasks for hardware provisioning.
 func (mrc *machineReconcileContext) createHardwareProvisionJob(hardware *tinkv1.Hardware, name string) error {
-	job := &rufiov1.Job{
+	templateData := mrc.tinkerbellMachine.Spec.TemplateOverride
+	if templateData == "" {
+		bootsIP := os.Getenv("TINKERBELL_IP")
+		if bootsIP == "" {
+			bootsIP = "192.168.1.1"
+		}
+
+		hardwareProvisionJobTemplate := templates.HardwareProvisionJobTemplate{
+			Name:      hardware.Spec.BMCRef.Name,
+			Namespace: mrc.tinkerbellMachine.Namespace,
+			EFIBoot:   hardware.Spec.Interfaces[0].DHCP.UEFI,
+			BootsIP:   bootsIP,
+		}
+
+		var err error
+
+		templateData, err = hardwareProvisionJobTemplate.Render()
+		if err != nil {
+			return fmt.Errorf("rendering template: %w", err)
+		}
+	}
+
+	templateObject := &tinkv1.Template{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: mrc.tinkerbellMachine.Namespace,
@@ -599,37 +621,18 @@ func (mrc *machineReconcileContext) createHardwareProvisionJob(hardware *tinkv1.
 				},
 			},
 		},
-		Spec: rufiov1.JobSpec{
-			MachineRef: rufiov1.MachineRef{
-				Name:      hardware.Spec.BMCRef.Name,
-				Namespace: mrc.tinkerbellMachine.Namespace,
-			},
-			Tasks: []rufiov1.Action{
-				{
-					PowerAction: rufiov1.PowerHardOff.Ptr(),
-				},
-				{
-					OneTimeBootDeviceAction: &rufiov1.OneTimeBootDeviceAction{
-						Devices: []rufiov1.BootDevice{
-							rufiov1.PXE,
-						},
-						EFIBoot: hardware.Spec.Interfaces[0].DHCP.UEFI,
-					},
-				},
-				{
-					PowerAction: rufiov1.PowerOn.Ptr(),
-				},
-			},
+		Spec: tinkv1.TemplateSpec{
+			Data: &templateData,
 		},
 	}
 
-	if err := mrc.client.Create(mrc.ctx, job); err != nil {
+	if err := mrc.client.Create(mrc.ctx, templateObject); err != nil {
 		return fmt.Errorf("creating job: %w", err)
 	}
 
 	mrc.log.Info("Created BMCJob to get hardware ready for provisioning",
-		"Name", job.Name,
-		"Namespace", job.Namespace)
+		"Name", templateObject.Name,
+		"Namespace", templateObject.Namespace)
 
 	return nil
 }
