@@ -587,14 +587,14 @@ func (mrc *machineReconcileContext) getBMCJob(jName string, bmj *rufiov1.Job) er
 
 // createHardwareProvisionJob creates a BMCJob object with the required tasks for hardware provisioning.
 func (mrc *machineReconcileContext) createHardwareProvisionJob(hardware *tinkv1.Hardware, name string) error {
-	templateData := mrc.tinkerbellMachine.Spec.TemplateOverride
-	if templateData == "" {
+	jobData := mrc.tinkerbellMachine.Spec.HardwareProvisionJobOverride
+	if jobData == "" {
 		bootsIP := os.Getenv("TINKERBELL_IP")
 		if bootsIP == "" {
 			bootsIP = "192.168.1.1"
 		}
 
-		hardwareProvisionJobTemplate := templates.HardwareProvisionJobTemplate{
+		hardwareProvisionJob := templates.HardwareProvisionJob{
 			Name:      hardware.Spec.BMCRef.Name,
 			Namespace: mrc.tinkerbellMachine.Namespace,
 			EFIBoot:   hardware.Spec.Interfaces[0].DHCP.UEFI,
@@ -603,15 +603,15 @@ func (mrc *machineReconcileContext) createHardwareProvisionJob(hardware *tinkv1.
 
 		var err error
 
-		templateData, err = hardwareProvisionJobTemplate.Render()
+		jobData, err = hardwareProvisionJob.Render()
 		if err != nil {
-			return fmt.Errorf("rendering template: %w", err)
+			return fmt.Errorf("rendering hardware provision job: %w", err)
 		}
 	}
 
 	var jobSpec rufiov1.JobSpec
 
-	if err := yaml.UnmarshalStrict([]byte(templateData), &jobSpec); err != nil {
+	if err := yaml.UnmarshalStrict([]byte(jobData), &jobSpec); err != nil {
 		return fmt.Errorf("parsing template: %w", err)
 	}
 

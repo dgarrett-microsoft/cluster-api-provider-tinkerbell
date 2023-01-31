@@ -141,8 +141,8 @@ tasks:
 `
 )
 
-// HardwareProvisionJobTemplate is a helper struct for rendering CAPT Template data.
-type HardwareProvisionJobTemplate struct {
+// HardwareProvisionJob is a helper struct for rendering Rufio job data.
+type HardwareProvisionJob struct {
 	Name      string
 	Namespace string
 	EFIBoot   bool
@@ -150,7 +150,7 @@ type HardwareProvisionJobTemplate struct {
 }
 
 // Render renders workflow template for a given machine including user-data.
-func (wt *HardwareProvisionJobTemplate) Render() (string, error) {
+func (wt *HardwareProvisionJob) Render() (string, error) {
 	if wt.Name == "" {
 		return "", ErrMissingName
 	}
@@ -161,7 +161,7 @@ func (wt *HardwareProvisionJobTemplate) Render() (string, error) {
 
 	// TODO error for namespace
 
-	tpl, err := template.New("template").Parse(hardwareProvisionJobTemplate)
+	tpl, err := template.New("template").Parse(hardwareProvisionJob)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to parse template")
 	}
@@ -177,7 +177,7 @@ func (wt *HardwareProvisionJobTemplate) Render() (string, error) {
 }
 
 const (
-	hardwareProvisionJobTemplate = `
+	hardwareProvisionJob = `
 machineRef:
   name: {{.Name}}
   namespace: {{.Namespace}}
