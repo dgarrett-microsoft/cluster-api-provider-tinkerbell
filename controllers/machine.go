@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"sigs.k8s.io/yaml"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -608,7 +609,13 @@ func (mrc *machineReconcileContext) createHardwareProvisionJob(hardware *tinkv1.
 		}
 	}
 
-	templateObject := &tinkv1.Template{
+	var jobSpec rufiov1.JobSpec
+
+	if err := yaml.UnmarshalStrict([]byte(templateData), &jobSpec); err != nil {
+		return fmt.Errorf("parsing template: %w", err)
+	}
+
+	job := &rufiov1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: mrc.tinkerbellMachine.Namespace,
@@ -621,18 +628,16 @@ func (mrc *machineReconcileContext) createHardwareProvisionJob(hardware *tinkv1.
 				},
 			},
 		},
-		Spec: tinkv1.TemplateSpec{
-			Data: &templateData,
-		},
+		Spec: jobSpec,
 	}
 
-	if err := mrc.client.Create(mrc.ctx, templateObject); err != nil {
+	if err := mrc.client.Create(mrc.ctx, job); err != nil {
 		return fmt.Errorf("creating job: %w", err)
 	}
 
 	mrc.log.Info("Created BMCJob to get hardware ready for provisioning",
-		"Name", templateObject.Name,
-		"Namespace", templateObject.Namespace)
+		"Name", job.Name,
+		"Namespace", job.Namespace)
 
 	return nil
 }
