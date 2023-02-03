@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"sigs.k8s.io/yaml"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,6 +37,7 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/yaml"
 
 	rufiov1 "github.com/tinkerbell/rufio/api/v1alpha1"
 	tinkv1 "github.com/tinkerbell/tink/pkg/apis/core/v1alpha1"
@@ -587,32 +587,24 @@ func (mrc *machineReconcileContext) getBMCJob(jName string, bmj *rufiov1.Job) er
 
 // createHardwareProvisionJob creates a BMCJob object with the required tasks for hardware provisioning.
 func (mrc *machineReconcileContext) createHardwareProvisionJob(hardware *tinkv1.Hardware, name string) error {
-	jobData := mrc.tinkerbellMachine.Spec.HardwareProvisionJobOverride
-	if jobData == "" {
-		bootsIP := os.Getenv("TINKERBELL_IP")
-		if bootsIP == "" {
-			bootsIP = "192.168.1.1"
-		}
-
-		hardwareProvisionJob := templates.HardwareProvisionJob{
-			Name:      hardware.Spec.BMCRef.Name,
-			Namespace: mrc.tinkerbellMachine.Namespace,
-			EFIBoot:   hardware.Spec.Interfaces[0].DHCP.UEFI,
-			BootsIP:   bootsIP,
+	tasksData := mrc.tinkerbellMachine.Spec.HardwareProvisionTasksOverride
+	if tasksData == "" {
+		hardwareProvisionTasks := templates.HardwareProvisionTasks{
+			EFIBoot: hardware.Spec.Interfaces[0].DHCP.UEFI,
 		}
 
 		var err error
 
-		jobData, err = hardwareProvisionJob.Render()
+		tasksData, err = hardwareProvisionTasks.Render()
 		if err != nil {
-			return fmt.Errorf("rendering hardware provision job: %w", err)
+			return fmt.Errorf("rendering hardware provision tasks: %w", err)
 		}
 	}
 
-	var jobSpec rufiov1.JobSpec
+	var tasks []rufiov1.Action
 
-	if err := yaml.UnmarshalStrict([]byte(jobData), &jobSpec); err != nil {
-		return fmt.Errorf("parsing template: %w", err)
+	if err := yaml.UnmarshalStrict([]byte(tasksData), &tasks); err != nil {
+		return fmt.Errorf("parsing tasks: %w", err)
 	}
 
 	job := &rufiov1.Job{
@@ -628,7 +620,13 @@ func (mrc *machineReconcileContext) createHardwareProvisionJob(hardware *tinkv1.
 				},
 			},
 		},
-		Spec: jobSpec,
+		Spec: rufiov1.JobSpec{
+			MachineRef: rufiov1.MachineRef{
+				Name:      hardware.Spec.BMCRef.Name,
+				Namespace: mrc.tinkerbellMachine.Namespace,
+			},
+			Tasks: tasks,
+		},
 	}
 
 	if err := mrc.client.Create(mrc.ctx, job); err != nil {

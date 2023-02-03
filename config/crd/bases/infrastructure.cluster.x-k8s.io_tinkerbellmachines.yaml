@@ -241,10 +241,10 @@ spec:
                   used by CAPT. You can learn more about Tinkerbell templates here:
                   https://docs.tinkerbell.org/templates/'
                 type: string
-              hardwareProvisionJobOverride:
-                description: 'HardwareProvisionJobOverride overrides the default Tinkerbell template
-                  used by CAPT. You can learn more about Tinkerbell templates here:
-                  https://docs.tinkerbell.org/templates/'
+              hardwareProvisionTasksOverride:
+                description: 'HardwareProvisionTasksOverride overrides the default Rufio tasks
+                  used by CAPT. You can learn more about Rufio tasks here:
+                  https://docs.tinkerbell.org/services/rufio/'
                 type: string
             type: object
           status:

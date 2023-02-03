@@ -65,10 +65,10 @@ type TinkerbellMachineSpec struct {
 	// +optional
 	TemplateOverride string `json:"templateOverride,omitempty"`
 
-	// HardwareProvisionJobOverride overrides the default Rufio job used by CAPT.
-	// You can learn more about Rufio jobs here: TODO
+	// HardwareProvisionTasksOverride overrides the default Rufio tasks used by CAPT.
+	// You can learn more about Rufio jobs here: https://docs.tinkerbell.org/services/rufio/
 	// +optional
-	HardwareProvisionJobOverride string `json:"hardwareProvisionJobOverride,omitempty"`
+	HardwareProvisionTasksOverride string `json:"hardwareProvisionTasksOverride,omitempty"`
 
 	// HardwareAffinity allows filtering for hardware.
 	// +optional

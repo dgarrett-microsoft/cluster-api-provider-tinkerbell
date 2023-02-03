@@ -142,26 +142,13 @@ tasks:
 )
 
 // HardwareProvisionJob is a helper struct for rendering Rufio job data.
-type HardwareProvisionJob struct {
-	Name      string
-	Namespace string
-	EFIBoot   bool
-	BootsIP   string
+type HardwareProvisionTasks struct {
+	EFIBoot bool
 }
 
 // Render renders workflow template for a given machine including user-data.
-func (wt *HardwareProvisionJob) Render() (string, error) {
-	if wt.Name == "" {
-		return "", ErrMissingName
-	}
-
-	if wt.BootsIP == "" {
-		return "", ErrMissingImageURL // TODO correct error
-	}
-
-	// TODO error for namespace
-
-	tpl, err := template.New("template").Parse(hardwareProvisionJob)
+func (wt *HardwareProvisionTasks) Render() (string, error) {
+	tpl, err := template.New("template").Parse(hardwareProvisionTasks)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to parse template")
 	}
@@ -177,16 +164,12 @@ func (wt *HardwareProvisionJob) Render() (string, error) {
 }
 
 const (
-	hardwareProvisionJob = `
-machineRef:
-  name: {{.Name}}
-  namespace: {{.Namespace}}
-tasks:
+	hardwareProvisionTasks = `
 - powerAction: "off"
 - oneTimeBootDeviceAction:
     device:
     - pxe
-    efiBoot: true
+    efiBoot: {{.EFIBoot}}
 - powerAction: "on"
 `
 )
