@@ -312,7 +312,8 @@ func firstPartitionFromDevice(device string) string {
 
 	switch {
 	case nvmeDevice.MatchString(device), emmcDevice.MatchString(device):
-		return fmt.Sprintf("%sp1", device)
+		// TODO: make this dynamic
+		return fmt.Sprintf("%sp2", device)
 	default:
 		return fmt.Sprintf("%s1", device)
 	}
