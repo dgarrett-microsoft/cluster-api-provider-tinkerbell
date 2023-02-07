@@ -315,7 +315,7 @@ func firstPartitionFromDevice(device string) string {
 		// TODO: make this dynamic
 		return fmt.Sprintf("%sp2", device)
 	default:
-		return fmt.Sprintf("%s1", device)
+		return fmt.Sprintf("%s2", device)
 	}
 }
 
