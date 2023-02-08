@@ -115,6 +115,7 @@ tasks:
             DIRMODE: 0700
             CONTENTS: |
               #!/bin/bash
+              dhclient 3b_p0 || true
               tdnf install -y apparmor-parser apparmor-utils
               iptables -I INPUT -p tcp --dport 6443 -j ACCEPT
               rm /root/cluster-setup.sh
@@ -134,6 +135,7 @@ tasks:
               Before=systemd-user-sessions.service
               Wants=network-online.target
               After=network-online.target
+              Before=cloud-init.target
               ConditionPathExists=/root/cluster-setup.sh
               [Service]
               Type=oneshot
