@@ -93,6 +93,63 @@ tasks:
           IMG_URL: {{.ImageURL}}
           DEST_DISK: {{.DestDisk}}
           COMPRESSED: true
+      - name: "create-user"
+        image: quay.io/tinkerbell-actions/cexec:v1.0.0
+        timeout: 90
+        environment:
+          BLOCK_DEVICE: {{.DestPartition}}
+          FS_TYPE: ext4
+          CHROOT: y
+          DEFAULT_INTERPRETER: "/bin/sh -c"
+          CMD_LINE: "useradd -p $(openssl passwd -1 tink) -s /bin/bash -d /home/tink/ -m -G sudo tink"
+      - name: "create-init-script"
+        image: quay.io/tinkerbell-actions/writefile:v1.0.0
+        timeout: 90
+        environment:
+            DEST_DISK: {{.DestPartition}}
+            FS_TYPE: ext4
+            DEST_PATH: /root/cluster-setup.sh
+            UID: 0
+            GID: 0
+            MODE: 0700
+            DIRMODE: 0700
+            CONTENTS: |
+              #!/bin/bash
+              tdnf install -y apparmor-parser apparmor-utils
+              iptables -I INPUT -p tcp --dport 6443 -j ACCEPT
+              rm /root/cluster-setup.sh
+      - name: "create-init-script-service"
+        image: quay.io/tinkerbell-actions/writefile:v1.0.0
+        timeout: 90
+        environment:
+            DEST_DISK: {{.DestPartition}}
+            FS_TYPE: ext4
+            DEST_PATH: /usr/local/lib/systemd/system/cluster-setup.service
+            UID: 0
+            GID: 0
+            MODE: 0600
+            DIRMODE: 0600
+            CONTENTS: |
+              [Unit]
+              Before=systemd-user-sessions.service
+              Wants=network-online.target
+              After=network-online.target
+              ConditionPathExists=/root/cluster-setup.sh
+              [Service]
+              Type=oneshot
+              ExecStart=/root/cluster-setup.sh
+              RemainAfterExit=yes
+              [Install]
+              WantedBy=multi-user.target
+      - name: "enable-init-script"
+        image: quay.io/tinkerbell-actions/cexec:v1.0.0
+        timeout: 90
+        environment:
+            BLOCK_DEVICE: {{.DestPartition}}
+            FS_TYPE: ext4
+            CHROOT: y
+            DEFAULT_INTERPRETER: "/bin/sh -c"
+            CMD_LINE: "systemctl enable cluster-setup.service"
       - name: "add-tink-cloud-init-config"
         image: quay.io/tinkerbell-actions/writefile:v1.0.0
         timeout: 90
