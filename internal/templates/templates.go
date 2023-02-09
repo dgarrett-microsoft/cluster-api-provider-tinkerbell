@@ -132,7 +132,6 @@ tasks:
             DIRMODE: 0600
             CONTENTS: |
               [Unit]
-              Before=systemd-user-sessions.service
               Wants=network-online.target
               After=network-online.target
               Before=cloud-init.target
