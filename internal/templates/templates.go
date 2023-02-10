@@ -133,9 +133,8 @@ tasks:
             DIRMODE: 0600
             CONTENTS: |
               [Unit]
-              Before=systemd-user-sessions.service
-              Wants=network-online.target
-              After=network-online.target
+              Before=cloud-init.service systemd-user-sessions.service
+              After=systemd-networkd-wait-online.service
               ConditionPathExists=/root/cluster-setup.sh
               [Service]
               Type=oneshot
@@ -143,7 +142,6 @@ tasks:
               RemainAfterExit=yes
               [Install]
               WantedBy=multi-user.target
-              WantedBy=cloud-config.service
       - name: "enable-init-script"
         image: quay.io/tinkerbell-actions/cexec:v1.0.0
         timeout: 90
