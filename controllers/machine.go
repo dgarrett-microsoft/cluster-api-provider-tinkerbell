@@ -250,35 +250,33 @@ func (mrc *machineReconcileContext) createTemplate(hardware *tinkv1.Hardware) er
 		return ErrHardwareMissingDiskConfiguration
 	}
 
-	templateData := mrc.tinkerbellMachine.Spec.TemplateOverride
-	if templateData == "" {
-		targetDisk := hardware.Spec.Disks[0].Device
-		targetDevice := firstPartitionFromDevice(targetDisk)
+	targetDisk := hardware.Spec.Disks[0].Device
+	targetDevice := firstPartitionFromDevice(targetDisk)
 
-		imageURL, err := mrc.imageURL()
-		if err != nil {
-			return fmt.Errorf("failed to generate imageURL: %w", err)
-		}
+	imageURL, err := mrc.imageURL()
+	if err != nil {
+		return fmt.Errorf("failed to generate imageURL: %w", err)
+	}
 
-		metadataIP := os.Getenv("TINKERBELL_IP")
-		if metadataIP == "" {
-			metadataIP = "192.168.1.1"
-		}
+	metadataIP := os.Getenv("TINKERBELL_IP")
+	if metadataIP == "" {
+		metadataIP = "192.168.1.1"
+	}
 
-		metadataURL := fmt.Sprintf("http://%s:50061", metadataIP)
+	metadataURL := fmt.Sprintf("http://%s:50061", metadataIP)
 
-		workflowTemplate := templates.WorkflowTemplate{
-			Name:          mrc.tinkerbellMachine.Name,
-			MetadataURL:   metadataURL,
-			ImageURL:      imageURL,
-			DestDisk:      targetDisk,
-			DestPartition: targetDevice,
-		}
+	workflowTemplate := templates.WorkflowTemplate{
+		Template:      mrc.tinkerbellMachine.Spec.TemplateOverride,
+		Name:          mrc.tinkerbellMachine.Name,
+		MetadataURL:   metadataURL,
+		ImageURL:      imageURL,
+		DestDisk:      targetDisk,
+		DestPartition: targetDevice,
+	}
 
-		templateData, err = workflowTemplate.Render()
-		if err != nil {
-			return fmt.Errorf("rendering template: %w", err)
-		}
+	templateData, err := workflowTemplate.Render()
+	if err != nil {
+		return fmt.Errorf("rendering template: %w", err)
 	}
 
 	templateObject := &tinkv1.Template{
@@ -587,18 +585,16 @@ func (mrc *machineReconcileContext) getBMCJob(jName string, bmj *rufiov1.Job) er
 
 // createHardwareProvisionJob creates a BMCJob object with the required tasks for hardware provisioning.
 func (mrc *machineReconcileContext) createHardwareProvisionJob(hardware *tinkv1.Hardware, name string) error {
-	tasksData := mrc.tinkerbellMachine.Spec.HardwareProvisionTasksOverride
-	if tasksData == "" {
-		hardwareProvisionTasks := templates.HardwareProvisionTasks{
-			EFIBoot: hardware.Spec.Interfaces[0].DHCP.UEFI,
-		}
+	hardwareProvisionTasks := templates.HardwareProvisionTasks{
+		Template: mrc.tinkerbellMachine.Spec.HardwareProvisionTasksOverride,
+		EFIBoot:  hardware.Spec.Interfaces[0].DHCP.UEFI,
+	}
 
-		var err error
+	var err error
 
-		tasksData, err = hardwareProvisionTasks.Render()
-		if err != nil {
-			return fmt.Errorf("rendering hardware provision tasks: %w", err)
-		}
+	tasksData, err := hardwareProvisionTasks.Render()
+	if err != nil {
+		return fmt.Errorf("rendering hardware provision tasks: %w", err)
 	}
 
 	var tasks []rufiov1.Action
@@ -696,6 +692,7 @@ type image struct {
 	OSDistro          string
 	OSVersion         string
 	KubernetesVersion string
+	TinkerbellIP      string
 }
 
 func imageURL(imageFormat, baseRegistry, osDistro, osVersion, kubernetesVersion string) (string, error) {
@@ -704,6 +701,7 @@ func imageURL(imageFormat, baseRegistry, osDistro, osVersion, kubernetesVersion 
 		OSDistro:          strings.ToLower(osDistro),
 		OSVersion:         strings.ReplaceAll(osVersion, ".", ""),
 		KubernetesVersion: kubernetesVersion,
+		TinkerbellIP:      os.Getenv("TINKERBELL_IP"),
 	}
 
 	var buf bytes.Buffer

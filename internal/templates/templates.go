@@ -36,6 +36,7 @@ var (
 
 // WorkflowTemplate is a helper struct for rendering CAPT Template data.
 type WorkflowTemplate struct {
+	Template           string
 	Name               string
 	MetadataURL        string
 	ImageURL           string
@@ -58,7 +59,12 @@ func (wt *WorkflowTemplate) Render() (string, error) {
 		wt.DeviceTemplateName = "{{.device_1}}"
 	}
 
-	tpl, err := template.New("template").Parse(workflowTemplate)
+	selectedTemplate := workflowTemplate
+	if wt.Template != "" {
+		selectedTemplate = wt.Template
+	}
+
+	tpl, err := template.New("template").Parse(selectedTemplate)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to parse template")
 	}
@@ -143,12 +149,19 @@ tasks:
 
 // HardwareProvisionJob is a helper struct for rendering Rufio job data.
 type HardwareProvisionTasks struct {
-	EFIBoot bool
+	Template     string
+	TinkerbellIP string
+	EFIBoot      bool
 }
 
 // Render renders workflow template for a given machine including user-data.
 func (wt *HardwareProvisionTasks) Render() (string, error) {
-	tpl, err := template.New("template").Parse(hardwareProvisionTasks)
+	selectedTemplate := hardwareProvisionTasks
+	if wt.Template != "" {
+		selectedTemplate = wt.Template
+	}
+
+	tpl, err := template.New("template").Parse(selectedTemplate)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to parse template")
 	}
