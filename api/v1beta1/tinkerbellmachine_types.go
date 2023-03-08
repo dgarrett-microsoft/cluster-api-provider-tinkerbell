@@ -63,12 +63,14 @@ type TinkerbellMachineSpec struct {
 	// TemplateOverride overrides the default Tinkerbell template used by CAPT.
 	// You can learn more about Tinkerbell templates here: https://docs.tinkerbell.org/templates/
 	// +optional
-	TemplateOverride string `json:"templateOverride,omitempty"`
+	TemplateOverride       string `json:"templateOverride,omitempty"`
+	TemplateOverrideRender bool   `json:"templateOverrideRender"`
 
 	// HardwareProvisionTasksOverride overrides the default Rufio tasks used by CAPT.
 	// You can learn more about Rufio jobs here: https://docs.tinkerbell.org/services/rufio/
 	// +optional
-	HardwareProvisionTasksOverride string `json:"hardwareProvisionTasksOverride,omitempty"`
+	HardwareProvisionTasksOverride       string `json:"hardwareProvisionTasksOverride,omitempty"`
+	HardwareProvisionTasksOverrideRender bool   `json:"hardwareProvisionTasksOverrideRender"`
 
 	// HardwareAffinity allows filtering for hardware.
 	// +optional

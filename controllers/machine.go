@@ -586,8 +586,9 @@ func (mrc *machineReconcileContext) getBMCJob(jName string, bmj *rufiov1.Job) er
 // createHardwareProvisionJob creates a BMCJob object with the required tasks for hardware provisioning.
 func (mrc *machineReconcileContext) createHardwareProvisionJob(hardware *tinkv1.Hardware, name string) error {
 	hardwareProvisionTasks := templates.HardwareProvisionTasks{
-		Template: mrc.tinkerbellMachine.Spec.HardwareProvisionTasksOverride,
-		EFIBoot:  hardware.Spec.Interfaces[0].DHCP.UEFI,
+		Template:     mrc.tinkerbellMachine.Spec.HardwareProvisionTasksOverride,
+		TinkerbellIP: os.Getenv("TINKERBELL_IP"),
+		EFIBoot:      hardware.Spec.Interfaces[0].DHCP.UEFI,
 	}
 
 	var err error
@@ -692,7 +693,6 @@ type image struct {
 	OSDistro          string
 	OSVersion         string
 	KubernetesVersion string
-	TinkerbellIP      string
 }
 
 func imageURL(imageFormat, baseRegistry, osDistro, osVersion, kubernetesVersion string) (string, error) {
@@ -701,7 +701,6 @@ func imageURL(imageFormat, baseRegistry, osDistro, osVersion, kubernetesVersion 
 		OSDistro:          strings.ToLower(osDistro),
 		OSVersion:         strings.ReplaceAll(osVersion, ".", ""),
 		KubernetesVersion: kubernetesVersion,
-		TinkerbellIP:      os.Getenv("TINKERBELL_IP"),
 	}
 
 	var buf bytes.Buffer
