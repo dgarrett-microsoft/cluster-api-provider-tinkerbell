@@ -699,7 +699,7 @@ func imageURL(imageFormat, baseRegistry, osDistro, osVersion, kubernetesVersion 
 	imageParams := image{
 		BaseRegistry:      baseRegistry,
 		OSDistro:          strings.ToLower(osDistro),
-		OSVersion:         strings.ReplaceAll(osVersion, ".", ""),
+		OSVersion:         osVersion, // strings.ReplaceAll(osVersion, ".", ""),
 		KubernetesVersion: kubernetesVersion,
 	}
 
